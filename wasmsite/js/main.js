@@ -2,6 +2,9 @@ let pyodide = null;
 
 
 async function loadPyodideAndPackages() {
+    // loadingModal: Show
+    document.getElementById("loadingModal").style.display = "flex";
+
     pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/' });
     await pyodide.loadPackage(['numpy']); //, 'matplotlib', 'Pillow']);  // Or any other required packages
 
@@ -24,6 +27,10 @@ async function loadPyodideAndPackages() {
     // const zipResponse = await fetch("py/py.zip");
     // const zipBinary = await zipResponse.arrayBuffer();
     // pyodide.unpackArchive(zipBinary, "zip");
+
+    
+    // loadingModal: Hide
+    document.getElementById("loadingModal").style.display = "none";
 
 }
 
