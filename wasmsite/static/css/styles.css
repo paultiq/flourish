@@ -1,0 +1,26 @@
+/* Reset some default styles */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Hide overflow to prevent horizontal scrollbar */
+}
+
+/* Style for the canvas element */
+canvas {
+    display: block;
+    top: 10px;
+    background-color: white; /* Set canvas background color */
+}
+
+
+#canvasContainer {
+    position: relative;
+    width: 100%;
+    height: 80vh; /* Reduced from 100vh to 80vh */
+}
+
+#optionsContainer {
+    position: relative;
+    z-index: 2; /* Ensure it's on top of other elements if needed */
+    margin-top: 10px; 
+}

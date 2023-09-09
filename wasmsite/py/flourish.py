@@ -1,0 +1,64 @@
+# Import required modules
+import js
+from js import document, requestAnimationFrame
+from pyodide.ffi import create_proxy
+import random
+#import numpy as np
+from harmonograph import Harmonograph
+from spirograph import Spirograph
+from render import ElegantLine, ColorLine
+import pythonrender
+
+# main.py
+def get_points(style, dt, spirogears, main_circle_radius):
+    """Original code used numpy's RNG. This had hiccups in Pyodide: it was an easy switch to `random`, but not sure if important
+    or useful to reconsider.  """
+
+    print("get_points: Started")
+    if style == "spirograph" or style is False:
+        print("Drawing Spirograph")
+        if main_circle_radius is None:
+            main_circle_radius = 0.3
+
+        if spirogears is None or len(spirogears) == 0:
+            curve = Spirograph()
+            curve.main_circle(main_circle_radius)
+            curve.add_gear(gearr=0.06, penr=0.15, inside=True)
+            curve.add_gear(gearr=0.0005, penr=0.05, inside=False)
+        else:
+            curve = Spirograph()
+            curve.main_circle(main_circle_radius)
+            for g in spirogears:
+                curve.add_gear(gearr=g.gearRadius, penr=g.penRadius, inside=g.inside)
+    elif style == "random1":
+        curve = Harmonograph.make_random(random, npend=2, syms=['R', 'X', 'Y', 'N'])
+    else:
+        curve = Harmonograph.make_random(random, npend=2, syms=['X', 'Y', 'R'])
+        
+    xs = []
+    ys = []
+    for x,y in curve.points(["x", "y"], dt):
+        xs.append(x)
+        ys.append(y)
+    print("get_points: Done")
+    return xs, ys
+
+def generate(style = "harmonograph", canvas_element = "harmonographCanvas", scale_ratio = 1, dt = .002, spirogears = None, main_circle_radius = None):
+    print("Generating: Started")
+    print(f"{style=}")
+    xs, ys = get_points(style=style, dt=dt, spirogears=spirogears, main_circle_radius=main_circle_radius)
+
+    if spirogears is not None:
+        print(spirogears)
+        
+    if canvas_element is None:
+        # Pass the objects back to Javascript
+        # In JS, these will be .toJS'd to js elements
+        # instead of proxies... this could also be done here:
+        js.curve_points_x = xs
+        js.curve_points_y = ys
+    else:
+        # If we have a canvas_element, we can draw the points directly here
+        pythonrender.draw_points(xs, ys, scale_ratio, canvas_element)
+    
+    print("Generating: Done")
