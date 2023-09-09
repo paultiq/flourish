@@ -8,6 +8,7 @@ from harmonograph import Harmonograph
 from spirograph import Spirograph
 from render import ElegantLine, ColorLine
 import pythonrender
+import math
 
 # main.py
 def get_points(style, dt, spirogears, main_circle_radius):
@@ -17,14 +18,26 @@ def get_points(style, dt, spirogears, main_circle_radius):
     print("get_points: Started")
     if style == "spirograph" or style is False:
         print("Drawing Spirograph")
-        if main_circle_radius is None:
-            main_circle_radius = 0.3
+        print(f"{type(main_circle_radius)}")
+        if main_circle_radius is None or math.isnan(main_circle_radius):
+            main_circle_radius = random.random()
 
         if spirogears is None or len(spirogears) == 0:
+            print("Generating random Spirograph")
             curve = Spirograph()
             curve.main_circle(main_circle_radius)
-            curve.add_gear(gearr=0.06, penr=0.15, inside=True)
-            curve.add_gear(gearr=0.0005, penr=0.05, inside=False)
+
+            gearr = random.random()
+
+            num_gears = random.randint(1, 5)
+            print(f"{main_circle_radius=} {num_gears=}")
+
+            for i in range(num_gears):
+                gearr = random.random() * random.random()
+                penr = random.random() / 10
+                inside = random.choice([True, False])
+                print(f"Gear {i}: {gearr=} {penr=} {inside=}")
+                curve.add_gear(gearr=gearr, penr=penr, inside=inside)
         else:
             curve = Spirograph()
             curve.main_circle(main_circle_radius)

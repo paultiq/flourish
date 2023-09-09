@@ -1,22 +1,17 @@
-/* Reset some default styles */
 body {
     margin: 0;
     padding: 0;
     overflow: hidden; /* Hide overflow to prevent horizontal scrollbar */
 }
 
-/* Style for the canvas element */
+
 canvas {
     display: block;
-    top: 10px;
-    background-color: white; /* Set canvas background color */
-}
+    width: 80dvw; /* Canvas fills 100% of its container */
+    height: 80dvh;
+    background-color: white;
+    border: 1px solid black; /* Black border */
 
-
-#canvasContainer {
-    position: relative;
-    width: 100%;
-    height: 80vh; /* Reduced from 100vh to 80vh */
 }
 
 #optionsContainer {

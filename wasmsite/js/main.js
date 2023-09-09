@@ -62,6 +62,7 @@ function resizeAndPrepareCanvas() {
     canvas.width = owidth * pixelRatio;
     canvas.height = oheight * pixelRatio;
     ctx.scale(pixelRatio, pixelRatio);
+    
 
     
     ctx.lineJoin = "round";
@@ -79,10 +80,10 @@ async function generateGraph() {
     const ctx = mycanvas.getContext("2d");
     
     // Clear the canvas by filling it with a transparent color
-    ctx.clearRect(0, 0, mycanvas.width, mycanvas.height);
+    ctx.clearRect(-mycanvas.width, -mycanvas.height, mycanvas.width, mycanvas.height);
+
     const width = mycanvas.width / pixelRatio / pixelRatio;
     const height = mycanvas.height / pixelRatio / pixelRatio;
-    ctx.clearRect(0, 0, width, height);
 
     pythonDrawElement = "harmonographCanvas"
     pythonDrawElement = null
@@ -136,29 +137,46 @@ async function generateGraph() {
 
 // Function to draw a curve on the canvas
 function drawCurve(xs, ys) {
+    console.log("Num points = ", xs.length);
     const canvas = document.getElementById("harmonographCanvas");
 
     const ctx = canvas.getContext("2d");
 
     // The pixel ratio is used to increase density of the graph
-    const width = canvas.width / pixelRatio / pixelRatio;
-    const height = canvas.height / pixelRatio / pixelRatio;
+    const awidth = canvas.width / pixelRatio;
+    const aheight = canvas.height / pixelRatio;
     console.log("Drawing in JS")
 
-    const offset_x = 0.5 * width;
-    const offset_y = 0.5 * height;
+    // Center point
+    const offset_x = awidth / 2;  
+    const offset_y = aheight / 2;
+
+    ctx.clearRect(0, 0, awidth, aheight);
+
+    // Shrink a little for margin
+    const widthMultiplier = 0.7 * awidth / 2
+    const heightMultipler = 0.7 * aheight / 2
 
     // Set style
-    ctx.clearRect(0, 0, width, height);
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = .1;
+    //ctx.strokeStyle = "blue";
+    //ctx.lineWidth = .1;
+    ctx.strokeStyle = document.getElementById('strokeStyle').value;
+    ctx.lineWidth = document.getElementById('lineWidth').value;
+
+    // Attempts to reduce aliasing. This seemed to help
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
+    ctx.shadowBlur = 2
+    ctx.shadowColor = ctx.strokeStyle
 
 
     ctx.beginPath();
-    ctx.moveTo(xs[0] * offset_x + offset_x, ys[0] * offset_y + offset_y);
+    ctx.moveTo(xs[0] * widthMultiplier + offset_x, ys[0] * heightMultipler + offset_y);
+    //ctx.translate(0.5, 0.5);  // attempt to improve aliasing, don't think it really helped
 
     for (let i = 1; i < xs.length; i++) {
-        ctx.lineTo(xs[i] * offset_x + offset_x, ys[i] * offset_y + offset_y);
+        ctx.lineTo(xs[i] * widthMultiplier + offset_x, ys[i] * heightMultipler + offset_y);
+
     }
 
     ctx.stroke();
