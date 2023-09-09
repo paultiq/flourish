@@ -75,14 +75,14 @@ def generate(style = "harmonograph", canvas_element = "harmonographCanvas", scal
     if spirogears is not None:
         print(spirogears)
         
+    print("Generating: Done")
     if canvas_element is None:
         # Pass the objects back to Javascript
         # In JS, these will be .toJS'd to js elements
         # instead of proxies... this could also be done here:
-        js.curve_points_x = xs
-        js.curve_points_y = ys
+        return xs, ys
     else:
         # If we have a canvas_element, we can draw the points directly here
         pythonrender.draw_points(xs, ys, scale_ratio, canvas_element)
+        return None, None
     
-    print("Generating: Done")
