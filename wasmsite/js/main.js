@@ -35,7 +35,10 @@ async function loadPyodideAndPackages() {
 }
 
 const button = document.getElementById("generateBtn");
+
+// Globals
 pixelRatio = 2; //  || window.devicePixelRatio;
+animationInterval = 200;
 
 // Function to resize the canvas to full width and height
 function resizeAndPrepareCanvas() {
@@ -176,6 +179,8 @@ async function generateGraph() {
     if (document.getElementById('randomSeedEnabled').checked){
         randomSeed = parseFloat(document.getElementById('randomSeed').value);
     }
+
+    
     if (pyodide) {
         const setSysPathCode = `
             import sys
@@ -190,16 +195,32 @@ async function generateGraph() {
 
             # Set canvas_element only if you want this rendered in Python (slower)
             print(gears)
-            flourish.generate(style = graphStyle, canvas_element = pythonDrawElement, scale_ratio = pixelRatio, main_circle_radius = mainCircleRadius, spirogears = gears, random_seed = randomSeed)
-        `;
+            curve_points_x, curve_points_y = flourish.generate(style = graphStyle, canvas_element = pythonDrawElement, scale_ratio = pixelRatio, main_circle_radius = mainCircleRadius, spirogears = gears, random_seed = randomSeed)
+            print(f"# of data points: {len(curve_points_x)}")
+            `;
         await pyodide.runPython(setSysPathCode);
 
-        if (canvas){
-            drawCurve(curve_points_x.toJs(), curve_points_y.toJs());
-        } else {
-            drawCurveSVG(curve_points_x.toJs(), curve_points_y.toJs());
-        }
+
+        cpx = pyodide.globals.get("curve_points_x");
+        cpy = pyodide.globals.get("curve_points_y");
         
+        if (typeof cpx !== 'undefined') {
+
+            if (canvas){
+                if (document.getElementById('animated').checked){
+                    drawCurveAnimated(cpx.toJs(), cpy.toJs());
+                }
+                else{
+                    drawCurve(cpx.toJs(), cpy.toJs());
+                }
+            } else {
+
+                drawCurveSVG(cpx.toJs(), cpy.toJs());
+
+            }
+            cpx.destroy()
+            cpy.destroy()
+        }
     }
     
 }
@@ -315,41 +336,63 @@ function drawCurveSVG(xs, ys) {
 
 
 // Experimental: Function to draw a curve on the canvas with animation
-
 function drawCurveAnimated(xs, ys) {
     const canvas = document.getElementById("harmonographCanvas");
     const ctx = canvas.getContext("2d");
+    const awidth = canvas.width / pixelRatio;
+    const aheight = canvas.height / pixelRatio;
 
-    const width = canvas.width / pixelRatio / pixelRatio;
-    const height = canvas.height / pixelRatio / pixelRatio;
-    const offset_x = 0.5 * width;
-    const offset_y = 0.5 * height;
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
 
-    ctx.clearRect(0, 0, width, height);
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 0.1;
+    const marginX = marginPercent * awidth;  // 2% of width
+    const marginY = marginPercent * aheight; // 2% of height
 
+    const xScale = (awidth - 2 * marginX) / (maxX - minX);
+    const yScale = (aheight - 2 * marginY) / (maxY - minY);
 
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
+    ctx.clearRect(0, 0, awidth, aheight);
+    
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 2;
+    ctx.shadowColor = ctx.strokeStyle;
 
-    let currentIndex = 1; // Start from the second point (index 1)
+    let currentPoint = 0;
+    ctx.strokeStyle = document.getElementById('strokeStyle').value;
+    ctx.lineWidth = document.getElementById('lineWidth').value;
 
+    showDot = document.getElementById('showDots').checked;
     function animate() {
-        ctx.beginPath();
-        ctx.moveTo(xs[0] * offset_x + offset_x, ys[0] * offset_y + offset_y);
+        if (currentPoint < xs.length - 1) {
 
-        for (let i = 1; i <= currentIndex; i++) {
-            ctx.lineTo(xs[i] * offset_x + offset_x, ys[i] * offset_y + offset_y);
-        }
 
-        ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(marginX + (xs[currentPoint] - minX) * xScale, marginY + (ys[currentPoint] - minY) * yScale);
+            ctx.lineTo(marginX + (xs[currentPoint + 1] - minX) * xScale, marginY + (ys[currentPoint + 1] - minY) * yScale);
+            ctx.stroke();
 
-        if (currentIndex < xs.length - 1) {
-            currentIndex++;
-            requestAnimationFrame(animate); // Continue the animation
+
+            if(showDot){
+                // Drawing the red dot on the leading edge
+                ctx.fillStyle = strokeStyle;
+                ctx.beginPath();
+                ctx.arc(marginX + (xs[currentPoint + 1] - minX) * xScale, marginY + (ys[currentPoint + 1] - minY) * yScale, 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            currentPoint++;
+            
+            if ((currentPoint % animationInterval) == 0){
+                requestAnimationFrame(animate);
+            } else {
+                animate()
+            }
         } else {
-            console.log("Done in JS");
+            requestAnimationFrame(animate);
         }
     }
 
