@@ -5,13 +5,12 @@ body {
 }
 
 
-canvas {
+canvas, svg {
     display: block;
-    width: 80dvw; /* Canvas fills 100% of its container */
+    width: 100%; /* Canvas fills 100% of its container */
     height: 80dvh;
     background-color: white;
     border: 1px solid black; /* Black border */
-
 }
 
 #optionsContainer {

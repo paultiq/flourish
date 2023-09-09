@@ -7,7 +7,10 @@
     <link rel="stylesheet" href="static/css/styles.css">
 </head>
 <body>
+    <!-- Both canvas and SVG work. Uncomment/recomment the appropriate element --> 
     <canvas id="harmonographCanvas"></canvas>
+
+    <!--<svg id="harmonographSVG" width="800" height="600" xmlns="http://www.w3.org/2000/svg"></svg> -->
 
     <div id="optionsContainer">
         <button id="generateBtn">Generate</button>
@@ -16,7 +19,7 @@
             <input type="color" id="strokeStyle" value="#45209D">
         </label>
         <label for="lineWidth">Line Width:
-            <input type="number" id="lineWidth" min=".001" value=".4">
+            <input type="number" id="lineWidth" min=".001" value="0.6">
         </label>
         <label for="randomSeed">Random Seed:
             <input type="number" id="randomSeed" value="">

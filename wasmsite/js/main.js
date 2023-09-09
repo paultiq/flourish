@@ -39,58 +39,118 @@ pixelRatio = 2; //  || window.devicePixelRatio;
 
 // Function to resize the canvas to full width and height
 function resizeAndPrepareCanvas() {
-    const canvas = document.getElementById("harmonographCanvas");
+    
 
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
     // Calculate 80% of the viewport dimensions
-    const canvasWidth = Math.floor(viewportWidth * 0.8);
-    const canvasHeight = Math.floor(viewportHeight * 0.8);
+    const newWidth = Math.floor(viewportWidth * 0.8);
+    const newHeight = Math.floor(viewportHeight * 0.8);
 
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    const canvas = document.getElementById("harmonographCanvas");
+    const svgElem = document.getElementById("harmonographSVG");
 
-    const ctx = canvas.getContext("2d");
+    if (canvas){
+            
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.globalAlpha = 0.5;
+        // Calculate 80% of the viewport dimensions
+        const canvasWidth = newWidth;
+        const canvasHeight = newHeight;
 
-    // Scale the photo for higher resolution
-    const owidth = canvas.width;
-    const oheight = canvas.height;
-    canvas.width = owidth * pixelRatio;
-    canvas.height = oheight * pixelRatio;
-    ctx.scale(pixelRatio, pixelRatio);
-    
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
 
-    
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
+        const ctx = canvas.getContext("2d");
 
+        ctx.imageSmoothingEnabled = true;
+        ctx.globalAlpha = 0.5;
+
+        // Scale the photo for higher resolution
+        const owidth = canvas.width;
+        const oheight = canvas.height;
+        canvas.width = owidth * pixelRatio;
+        canvas.height = oheight * pixelRatio;
+        ctx.scale(pixelRatio, pixelRatio);
+        
+
+        
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+    }
+
+    if (svgElem) {
+        svgElem.setAttribute('width', newWidth);
+        svgElem.setAttribute('height', newHeight);
+
+        // Scale up to increase drawing clarity
+        svgElem.setAttribute('viewBox', `0 0 ${pixelRatio*newWidth} ${pixelRatio*newHeight}`);
+
+        if (true){
+            // Testing SVG Filters to try to improve quality. 
+            const filterElem = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+            filterElem.setAttribute('id', 'betterAA');
+            const feComponentTransfer = document.createElementNS("http://www.w3.org/2000/svg", "feComponentTransfer");
+            const funcA = document.createElementNS("http://www.w3.org/2000/svg", "feFuncA");
+            funcA.setAttribute('type', 'linear');
+            funcA.setAttribute('slope', '1.2');
+            feComponentTransfer.appendChild(funcA);
+            filterElem.appendChild(feComponentTransfer);
+            svgElem.appendChild(filterElem);
+            //svgElem.setAttribute('viewBox', `0 0 ${newWidth} ${newHeight}`);
+        }
+
+        if (!document.getElementById('softEdgeFilter')) {
+            const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            
+            const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+            filter.setAttribute('id', 'softEdgeFilter');
+            
+            const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+            blur.setAttribute('in', 'SourceAlpha');
+            blur.setAttribute('stdDeviation', '2');
+            
+            const composite = document.createElementNS("http://www.w3.org/2000/svg", "feComposite");
+            composite.setAttribute('in', 'SourceGraphic');
+            
+            filter.appendChild(blur);
+            filter.appendChild(composite);
+            defs.appendChild(filter);
+            
+            svgElem.appendChild(defs);
+        }
+        
+    }
 }
 
 
 async function generateGraph() {
+    pythonDrawElement = null;
+    const canvas = document.getElementById("harmonographCanvas");
 
+    if (canvas){
+        const mycanvas = document.getElementById("harmonographCanvas");
+        const ctx = mycanvas.getContext("2d");
+        
+        // Clear the canvas by filling it with a transparent color
+        ctx.clearRect(-mycanvas.width, -mycanvas.height, mycanvas.width, mycanvas.height);
 
+        const width = mycanvas.width / pixelRatio / pixelRatio;
+        const height = mycanvas.height / pixelRatio / pixelRatio;
+    } else {
+        // clear the svg
+        const svgElem = document.getElementById("harmonographSVG");
+        while (svgElem.firstChild) {
+            svgElem.removeChild(svgElem.firstChild);
+        }
 
-    const mycanvas = document.getElementById("harmonographCanvas");
+        pixelRatio = 1 // FIXME: maybe devicePixelRatio, need to test
+        // SVG
+    }
 
-    const ctx = mycanvas.getContext("2d");
-    
-    // Clear the canvas by filling it with a transparent color
-    ctx.clearRect(-mycanvas.width, -mycanvas.height, mycanvas.width, mycanvas.height);
-
-    const width = mycanvas.width / pixelRatio / pixelRatio;
-    const height = mycanvas.height / pixelRatio / pixelRatio;
-
-    pythonDrawElement = "harmonographCanvas"
-    pythonDrawElement = null
-
-    graphStyle = "harmonograph"
+    graphStyle = "harmonograph";
     if(document.querySelector('input[name="graphType"]:checked').value === "Spirograph") {
-        graphStyle = "spirograph"
+        graphStyle = "spirograph";
     }
 
     gears = null;
@@ -134,58 +194,125 @@ async function generateGraph() {
         `;
         await pyodide.runPython(setSysPathCode);
 
-        drawCurve(curve_points_x.toJs(), curve_points_y.toJs())
+        if (canvas){
+            drawCurve(curve_points_x.toJs(), curve_points_y.toJs());
+        } else {
+            drawCurveSVG(curve_points_x.toJs(), curve_points_y.toJs());
+        }
+        
     }
     
 }
 
-// Function to draw a curve on the canvas
+marginPercent = 0.02
 function drawCurve(xs, ys) {
     console.log("Num points = ", xs.length);
     const canvas = document.getElementById("harmonographCanvas");
-
     const ctx = canvas.getContext("2d");
-
-    // The pixel ratio is used to increase density of the graph
+    
     const awidth = canvas.width / pixelRatio;
     const aheight = canvas.height / pixelRatio;
-    console.log("Drawing in JS")
+    console.log("Drawing in JS");
 
-    // Center point
-    const offset_x = awidth / 2;  
-    const offset_y = aheight / 2;
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    const marginX = marginPercent * awidth;  // 2% of width
+    const marginY = marginPercent * aheight; // 2% of height
+
+    const xScale = (awidth - 2 * marginX) / (maxX - minX);
+    const yScale = (aheight - 2 * marginY) / (maxY - minY);
 
     ctx.clearRect(0, 0, awidth, aheight);
 
-    // Shrink a little for margin
-    const widthMultiplier = 0.7 * awidth / 2
-    const heightMultipler = 0.7 * aheight / 2
-
-    // Set style
-    //ctx.strokeStyle = "blue";
-    //ctx.lineWidth = .1;
     ctx.strokeStyle = document.getElementById('strokeStyle').value;
     ctx.lineWidth = document.getElementById('lineWidth').value;
 
-    // Attempts to reduce aliasing. This seemed to help
-    ctx.shadowOffsetX = 0
-    ctx.shadowOffsetY = 0
-    ctx.shadowBlur = 2
-    ctx.shadowColor = ctx.strokeStyle
-
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 2;
+    ctx.shadowColor = ctx.strokeStyle;
 
     ctx.beginPath();
-    ctx.moveTo(xs[0] * widthMultiplier + offset_x, ys[0] * heightMultipler + offset_y);
-    //ctx.translate(0.5, 0.5);  // attempt to improve aliasing, don't think it really helped
+    ctx.moveTo(marginX + (xs[0] - minX) * xScale, marginY + (ys[0] - minY) * yScale);
 
     for (let i = 1; i < xs.length; i++) {
-        ctx.lineTo(xs[i] * widthMultiplier + offset_x, ys[i] * heightMultipler + offset_y);
-
+        ctx.lineTo(marginX + (xs[i] - minX) * xScale, marginY + (ys[i] - minY) * yScale);
     }
 
     ctx.stroke();
     console.log("Done in JS");
 }
+
+function drawCurveSVG(xs, ys) {
+    console.log("Num points = ", xs.length);
+
+    const svgElem = document.getElementById("harmonographSVG");
+    
+    const viewBoxValues = svgElem.getAttribute('viewBox').split(' ').map(parseFloat);
+    const viewBoxWidth = viewBoxValues[2];
+    const viewBoxHeight = viewBoxValues[3];
+
+    const awidth = viewBoxWidth; // parseFloat(svgElem.getAttribute('width'));
+    const aheight = viewBoxHeight; // parseFloat(svgElem.getAttribute('height'));
+    console.log("Drawing in SVG");
+
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    const marginX = 0.02 * awidth;  // 2% of width
+    const marginY = 0.02 * aheight; // 2% of height
+
+    const effectiveWidth = awidth - 2 * marginX;
+    const effectiveHeight = aheight - 2 * marginY;
+    
+    const xScale = effectiveWidth / (maxX - minX);
+    const yScale = effectiveHeight / (maxY - minY);
+    
+    const xOffset = -minX * xScale + marginX;
+    const yOffset = -minY * yScale + marginY;
+        
+    
+    
+    
+    
+    
+    // Blur filter setup
+    const filterElem = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+    filterElem.setAttribute('id', 'slightblur');
+    const blurElem = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
+    blurElem.setAttribute('in', 'SourceGraphic');
+    blurElem.setAttribute('stdDeviation', '0.5');
+    filterElem.appendChild(blurElem);
+    svgElem.appendChild(filterElem);
+
+    let pathData = `M ${(xs[0] * xScale) + xOffset} ${(ys[0] * yScale) + yOffset}`;
+    
+    for (let i = 1; i < xs.length; i++) {
+        pathData += ` L ${(xs[i] * xScale) + xOffset} ${(ys[i] * yScale) + yOffset}`;
+    }
+
+    const pathElem = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    pathElem.setAttribute('d', pathData);
+    pathElem.setAttribute('stroke', document.getElementById('strokeStyle').value);
+    pathElem.setAttribute('stroke-width', document.getElementById('lineWidth').value);
+    pathElem.setAttribute('fill', 'none');
+
+    pathElem.setAttribute('shape-rendering', 'geometricPrecision'); 
+
+
+    pathElem.setAttribute('filter', 'url(#slightblur)'); 
+    pathElem.setAttribute('filter', 'url(#betterAA)');
+    pathElem.setAttribute('filter', 'url(#softEdgeFilter)');
+
+    svgElem.appendChild(pathElem);
+    console.log("Done in SVG");
+}
+
 
 // Experimental: Function to draw a curve on the canvas with animation
 
