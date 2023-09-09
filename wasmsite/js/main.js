@@ -112,12 +112,16 @@ async function generateGraph() {
         }
     }
 
+    randomSeed = false
+    if (document.getElementById('randomSeedEnabled').checked){
+        randomSeed = parseFloat(document.getElementById('randomSeed').value);
+    }
     if (pyodide) {
         const setSysPathCode = `
             import sys
 
             # This is some pyodide magic: variables defined in the global scope can be imported
-            from js import pixelRatio, pythonDrawElement, graphStyle, gears, mainCircleRadius
+            from js import pixelRatio, pythonDrawElement, graphStyle, gears, mainCircleRadius, randomSeed
 
             sys.path.append('py')
             print("Initialized")
@@ -126,7 +130,7 @@ async function generateGraph() {
 
             # Set canvas_element only if you want this rendered in Python (slower)
             print(gears)
-            flourish.generate(style = graphStyle, canvas_element = pythonDrawElement, scale_ratio = pixelRatio, main_circle_radius = mainCircleRadius, spirogears = gears)
+            flourish.generate(style = graphStyle, canvas_element = pythonDrawElement, scale_ratio = pixelRatio, main_circle_radius = mainCircleRadius, spirogears = gears, random_seed = randomSeed)
         `;
         await pyodide.runPython(setSysPathCode);
 

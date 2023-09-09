@@ -11,9 +11,19 @@ import pythonrender
 import math
 
 # main.py
-def get_points(style, dt, spirogears, main_circle_radius):
+def get_points(style, dt, spirogears, main_circle_radius, random_seed):
     """Original code used numpy's RNG. This had hiccups in Pyodide: it was an easy switch to `random`, but not sure if important
     or useful to reconsider.  """
+
+    if random_seed == 0 or random_seed is None or math.isnan(random_seed):
+        # Since we can't get random_seed back out, let's generate one and print it to console
+        print("Since we can't retrieve the default seed, let's generate a seed so we can print it")
+        
+        random_seed = random.random()
+        document.getElementById('randomSeed').value = random_seed
+
+    print(f"{random_seed=}")
+    random.seed(random_seed)
 
     print("get_points: Started")
     if style == "spirograph" or style is False:
@@ -43,7 +53,8 @@ def get_points(style, dt, spirogears, main_circle_radius):
             curve.main_circle(main_circle_radius)
             for g in spirogears:
                 curve.add_gear(gearr=g.gearRadius, penr=g.penRadius, inside=g.inside)
-    elif style == "random1":
+    elif style == "random1": 
+        # Not used, experimenting with different parameters
         curve = Harmonograph.make_random(random, npend=2, syms=['R', 'X', 'Y', 'N'])
     else:
         curve = Harmonograph.make_random(random, npend=2, syms=['X', 'Y', 'R'])
@@ -56,10 +67,10 @@ def get_points(style, dt, spirogears, main_circle_radius):
     print("get_points: Done")
     return xs, ys
 
-def generate(style = "harmonograph", canvas_element = "harmonographCanvas", scale_ratio = 1, dt = .002, spirogears = None, main_circle_radius = None):
+def generate(style = "harmonograph", canvas_element = "harmonographCanvas", scale_ratio = 1, dt = .002, spirogears = None, main_circle_radius = None, random_seed = None):
     print("Generating: Started")
     print(f"{style=}")
-    xs, ys = get_points(style=style, dt=dt, spirogears=spirogears, main_circle_radius=main_circle_radius)
+    xs, ys = get_points(style=style, dt=dt, spirogears=spirogears, main_circle_radius=main_circle_radius, random_seed = random_seed)
 
     if spirogears is not None:
         print(spirogears)
