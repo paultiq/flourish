@@ -8,8 +8,10 @@ body {
 canvas, svg {
     display: block;
     width: 100%; /* Canvas fills 100% of its container */
-    height: 80dvh;
-    background-color: white;
+    height: 100%;
+    /* background-color: white; */
+    background-color: transparent;
+
     border: 1px solid black; /* Black border */
 }
 

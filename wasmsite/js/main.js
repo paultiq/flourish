@@ -38,7 +38,7 @@ const button = document.getElementById("generateBtn");
 
 // Globals
 pixelRatio = 2; //  || window.devicePixelRatio;
-animationInterval = 200;
+animationInterval = 15;
 
 // Function to resize the canvas to full width and height
 function resizeAndPrepareCanvas() {
@@ -52,10 +52,11 @@ function resizeAndPrepareCanvas() {
     const newHeight = Math.floor(viewportHeight * 0.8);
 
     const canvas = document.getElementById("harmonographCanvas");
+    const canvasTop = document.getElementById("harmonographCanvasTop");
+
     const svgElem = document.getElementById("harmonographSVG");
 
     if (canvas){
-            
 
         // Calculate 80% of the viewport dimensions
         const canvasWidth = newWidth;
@@ -68,6 +69,7 @@ function resizeAndPrepareCanvas() {
 
         ctx.imageSmoothingEnabled = true;
         ctx.globalAlpha = 0.5;
+        ctx.antiAlias = true
 
         // Scale the photo for higher resolution
         const owidth = canvas.width;
@@ -80,6 +82,32 @@ function resizeAndPrepareCanvas() {
         
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
+    }
+    
+    if (canvasTop){
+
+        // Calculate 80% of the viewport dimensions
+        const canvasWidth = newWidth;
+        const canvasHeight = newHeight;
+
+        canvasTop.width = canvasWidth;
+        canvasTop.height = canvasHeight;
+
+        const ctx2 = canvasTop.getContext("2d");
+
+        ctx2.imageSmoothingEnabled = true;
+        ctx2.globalAlpha = 0.5;
+        ctx2.antiAlias = true
+
+        // Scale the photo for higher resolution
+        const owidth = canvasTop.width;
+        const oheight = canvasTop.height;
+        canvasTop.width = owidth * pixelRatio;
+        canvasTop.height = oheight * pixelRatio;
+        ctx2.scale(pixelRatio, pixelRatio);
+        
+        ctx2.lineJoin = "round";
+        ctx2.lineCap = "round";
     }
 
     if (svgElem) {
@@ -128,13 +156,14 @@ function resizeAndPrepareCanvas() {
 
 
 async function generateGraph() {
+    animationId = animationId + 1;
     pythonDrawElement = null;
     const canvas = document.getElementById("harmonographCanvas");
 
     if (canvas){
         const mycanvas = document.getElementById("harmonographCanvas");
         const ctx = mycanvas.getContext("2d");
-        
+
         // Clear the canvas by filling it with a transparent color
         ctx.clearRect(-mycanvas.width, -mycanvas.height, mycanvas.width, mycanvas.height);
 
@@ -334,11 +363,30 @@ function drawCurveSVG(xs, ys) {
     console.log("Done in SVG");
 }
 
-
+let animationId = 0;
 // Experimental: Function to draw a curve on the canvas with animation
 function drawCurveAnimated(xs, ys) {
+    // Parameters/Variables:
+    // xs / ys: lists of points used for drawing
+    // animationId: used to detect cancellation of animation
+    // canvas: Layer to draw the harmonograph
+    // canvasTop: The layer to draw the leading "dot", if displayed. 
+    // marginPercent: Add margins around the figure
+    
+    // Functionality
+    // The canvases size is scaled down by pixel ratio to improve picture quality
+    // xScale/yScale are used to scale the xs and ys to 0-1, so the entire figure fits / fills the view area
+    //
+    // animationInterval: Animation is triggered once per animationInterval. A higher number is faster.
+
+    const myId = animationId;
+
     const canvas = document.getElementById("harmonographCanvas");
+    const canvasTop = document.getElementById("harmonographCanvasTop");
+
     const ctx = canvas.getContext("2d");
+    const ctxTop = canvasTop.getContext("2d");
+    
     const awidth = canvas.width / pixelRatio;
     const aheight = canvas.height / pixelRatio;
 
@@ -363,13 +411,16 @@ function drawCurveAnimated(xs, ys) {
     let currentPoint = 0;
     ctx.strokeStyle = document.getElementById('strokeStyle').value;
     ctx.lineWidth = document.getElementById('lineWidth').value;
-
     showDot = document.getElementById('showDots').checked;
     function animate() {
+        if(animationId!=myId){
+            // This was cancelled
+            console.log("animationId changed, drawing cancelled")
+            ctxTop.clearRect(0, 0, awidth, aheight);
+            return;
+        }
         if (currentPoint < xs.length - 1) {
 
-
-            
             ctx.beginPath();
             ctx.moveTo(marginX + (xs[currentPoint] - minX) * xScale, marginY + (ys[currentPoint] - minY) * yScale);
             ctx.lineTo(marginX + (xs[currentPoint + 1] - minX) * xScale, marginY + (ys[currentPoint + 1] - minY) * yScale);
@@ -377,13 +428,16 @@ function drawCurveAnimated(xs, ys) {
 
 
             if(showDot){
-                // Drawing the red dot on the leading edge
-                ctx.fillStyle = strokeStyle;
-                ctx.beginPath();
-                ctx.arc(marginX + (xs[currentPoint + 1] - minX) * xScale, marginY + (ys[currentPoint + 1] - minY) * yScale, 2, 0, 2 * Math.PI);
-                ctx.fill();
-            }
 
+                // only clear every 3rd iteration
+                ctxTop.clearRect(0, 0, awidth, aheight);
+                ctxTop.fillStyle = "red";
+                ctxTop.beginPath();
+
+                dotsize = 5
+                ctxTop.arc(marginX + (xs[currentPoint + 1] - minX) * xScale, marginY + (ys[currentPoint + 1] - minY) * yScale, dotsize, 0, 2 * Math.PI);
+                ctxTop.fill();
+            }
             currentPoint++;
             
             if ((currentPoint % animationInterval) == 0){
@@ -392,6 +446,8 @@ function drawCurveAnimated(xs, ys) {
                 animate()
             }
         } else {
+            ctxTop.clearRect(0, 0, awidth, aheight);
+
             requestAnimationFrame(animate);
         }
     }
