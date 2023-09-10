@@ -153,17 +153,22 @@ class Harmonograph(Curve):
             
             pts.append(val)
 
-        stacked_vals = np.vstack(pts)
+        normalized = False
+        if normalized:
+            stacked_vals = np.vstack(pts)
 
-        min_val = np.min(stacked_vals)
-        max_val = np.max(stacked_vals)
+            min_val = np.min(stacked_vals)
+            max_val = np.max(stacked_vals)
 
-        desired_min = -0.5
-        desired_max = 0.5
+            desired_min = -0.5
+            desired_max = 0.5
 
-        normalized_vals = desired_min + (desired_max - desired_min) * (stacked_vals - min_val) / (max_val - min_val)
+            normalized_pts = desired_min + (desired_max - desired_min) * (stacked_vals - min_val) / (max_val - min_val)
+            final_pts = normalized_pts
+        else:
+            final_pts = pts
 
-        for pt in zip(*normalized_vals):
+        for pt in zip(*final_pts):
             yield pt
 
     def param_things(self):
