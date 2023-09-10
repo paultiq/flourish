@@ -11,7 +11,7 @@
     <canvas id="harmonographCanvas" style="position: absolute; z-index: 2;"></canvas>
     <canvas id="harmonographCanvasTop" style="position: absolute; z-index: 1;"></canvas>
 
-    <!--<svg id="harmonographSVG" width="800" height="600" xmlns="http://www.w3.org/2000/svg"></svg> -->
+    <!--<svg id="harmonographSVG" style="position: absolute; z-index: 1;" xmlns="http://www.w3.org/2000/svg"></svg>-->
 
     <div id="optionsContainer">
         <button id="generateBtn">Generate</button>
@@ -19,15 +19,22 @@
         <label for="animated">Animated:
             <input type="checkbox" id="animated" checked>
         </label>
+        <label for="animationInterval">AnimationInterval:
+            <input type="number" id="animationInterval" min="1" value="10">
+        </label>
         <label for="showDots">Dots:
             <input type="checkbox" id="showDots" checked>
         </label>
-        <label for="strokeStyle">Color:
+        <label for="strokeStyle"> | Color:
             <input type="color" id="strokeStyle" value="#45209D">
         </label>
         <label for="lineWidth">Line Width:
             <input type="number" id="lineWidth" min=".001" value="0.6">
         </label>
+        <label for="dt">DT:
+            <input type="number" id="dt" min=".00001" value="0.001">
+        </label>
+
         <label for="randomSeed">Seed:
             <input type="number" id="randomSeed" value="">
             <input type="checkbox" id="randomSeedEnabled" name="randomSeedEnabled">
@@ -52,6 +59,7 @@
     <div id="loadingModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;">
         <div style="background-color: white; padding: 20px; border-radius: 5px;">Loading Pyodide...</div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/pyodide@latest/pyodide.min.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
     

@@ -10,6 +10,7 @@ from render import ElegantLine, ColorLine
 import pythonrender
 import math
 
+
 # main.py
 def get_points(style, dt, spirogears, main_circle_radius, random_seed):
     """Original code used numpy's RNG. This had hiccups in Pyodide: it was an easy switch to `random`, but not sure if important
@@ -61,6 +62,8 @@ def get_points(style, dt, spirogears, main_circle_radius, random_seed):
         
     xs = []
     ys = []
+
+    # TODO: Change points() so it returns the points, rather than going from a List to a Generator and back to a List
     for x,y in curve.points(["x", "y"], dt):
         xs.append(x)
         ys.append(y)
@@ -80,9 +83,9 @@ def generate(style = "harmonograph", canvas_element = "harmonographCanvas", scal
         # Pass the objects back to Javascript
         # In JS, these will be .toJS'd to js elements
         # instead of proxies... this could also be done here:
-        return xs, ys
+        return xs, ys, min(xs), max(xs), min(ys), max(ys)
     else:
         # If we have a canvas_element, we can draw the points directly here
         pythonrender.draw_points(xs, ys, scale_ratio, canvas_element)
-        return None, None
+        return None, None, None, None, None, None
     
