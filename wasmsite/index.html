@@ -7,11 +7,15 @@
     <link rel="stylesheet" href="static/css/styles.css">
 </head>
 <body>
-    <!-- Both canvas and SVG work. Uncomment/recomment the appropriate element --> 
-    <canvas id="harmonographCanvas" style="position: absolute; z-index: 2;"></canvas>
-    <canvas id="harmonographCanvasTop" style="position: absolute; z-index: 1;"></canvas>
+    <!-- Both canvas and SVG work. Uncomment/recomment the appropriate element.
+        SVG is perhaps the way to go for more advanced animation, as you can reference (remove) curves directly
+        Canvas is bitmap based, making deletion difficult, without a lot of recalculation --> 
 
-    <!--<svg id="harmonographSVG" style="position: absolute; z-index: 1;" xmlns="http://www.w3.org/2000/svg"></svg>-->
+    <canvas id="canvasEl" style="position: absolute; z-index: 2;"></canvas>
+    <canvas id="canvasElTop" style="position: absolute; z-index: 1;"></canvas>
+
+    
+    <!--<svg id="svgEl" style="position: absolute; z-index: 1;" xmlns="http://www.w3.org/2000/svg"></svg>-->
 
     <div id="optionsContainer">
         <button id="generateBtn">Generate</button>
@@ -61,6 +65,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/pyodide@latest/pyodide.min.js"></script>
+    <script type="text/javascript" src="js/draw.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
     
 </body>

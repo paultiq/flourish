@@ -1,5 +1,6 @@
 # Import required modules
 import js
+import numpy as np
 from js import document, requestAnimationFrame
 from pyodide.ffi import create_proxy
 import random
@@ -83,9 +84,23 @@ def generate(style = "harmonograph", canvas_element = "harmonographCanvas", scal
         # Pass the objects back to Javascript
         # In JS, these will be .toJS'd to js elements
         # instead of proxies... this could also be done here:
-        return xs, ys, min(xs), max(xs), min(ys), max(ys)
+
+        # Normalize first
+        stacked_vals = np.vstack([xs, ys])
+
+        min_val = np.min(stacked_vals)
+        max_val = np.max(stacked_vals)
+
+        # Giving a little margin
+        desired_min = 0.025
+        desired_max = 0.975
+
+        xs = desired_min + (desired_max - desired_min) * (xs - min_val) / (max_val - min_val)
+        ys = desired_min + (desired_max - desired_min) * (ys - min_val) / (max_val - min_val)
+        
+        return xs, ys
     else:
         # If we have a canvas_element, we can draw the points directly here
         pythonrender.draw_points(xs, ys, scale_ratio, canvas_element)
-        return None, None, None, None, None, None
+        return None, None
     

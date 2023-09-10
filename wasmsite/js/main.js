@@ -2,7 +2,6 @@ let pyodide = null;
 
 // Globals
 pixelRatio = 2; //  || window.devicePixelRatio;
-marginPercent = 0.02
 
 const button = document.getElementById("generateBtn");
 
@@ -43,10 +42,10 @@ async function generateGraph() {
 
     animationId = animationId + 1;
     pythonDrawElement = null;
-    const canvas = document.getElementById("harmonographCanvas");
+    const canvas = document.getElementById("canvasEl");
 
     if (canvas){
-        const mycanvas = document.getElementById("harmonographCanvas");
+        const mycanvas = document.getElementById("canvasEl");
         const ctx = mycanvas.getContext("2d");
 
         // Clear the canvas by filling it with a transparent color
@@ -56,7 +55,7 @@ async function generateGraph() {
         const height = mycanvas.height / pixelRatio / pixelRatio;
     } else {
         // clear the svg
-        const svgElem = document.getElementById("harmonographSVG");
+        const svgElem = document.getElementById("svgEl");
         while (svgElem.firstChild) {
             svgElem.removeChild(svgElem.firstChild);
         }
@@ -116,8 +115,9 @@ async function generateGraph() {
 
             # Set canvas_element only if you want this rendered in Python (slower)
             print(gears)
-            curve_points_x, curve_points_y, minX, maxX, minY, maxY = flourish.generate(style = graphStyle, canvas_element = pythonDrawElement, scale_ratio = pixelRatio, main_circle_radius = mainCircleRadius, spirogears = gears, random_seed = randomSeed, dt = dt)
+            curve_points_x, curve_points_y = flourish.generate(style = graphStyle, canvas_element = pythonDrawElement, scale_ratio = pixelRatio, main_circle_radius = mainCircleRadius, spirogears = gears, random_seed = randomSeed, dt = dt)
             print(f"# of data points: {len(curve_points_x)}")
+
             `;
         await pyodide.runPython(setSysPathCode);
 
@@ -127,194 +127,24 @@ async function generateGraph() {
         cpx = pyodide.globals.get("curve_points_x");
         cpy = pyodide.globals.get("curve_points_y");
         
-        minX = pyodide.globals.get("minX");
-        maxX = pyodide.globals.get("maxX");
-        
-        minY = pyodide.globals.get("minY");
-        maxY = pyodide.globals.get("maxY");
         
         if (typeof cpx !== 'undefined') {
 
             if (canvas){
                 if (document.getElementById('animated').checked){
-                    drawCurve(cpx.toJs(), cpy.toJs(), minX, maxX, minY, maxY, true);
+                    drawCurve(cpx.toJs(), cpy.toJs(),  true);
                 }
                 else{
-                    drawCurve(cpx.toJs(), cpy.toJs(), minX, maxX, minY, maxY, false);
+                    drawCurve(cpx.toJs(), cpy.toJs(), false);
                 }
             } else {
-
-                drawCurveSVG(cpx.toJs(), cpy.toJs(), minX, maxX, minY, maxY);
-
+                drawCurveSVG(cpx.toJs(), cpy.toJs());
             }
             cpx.destroy()
             cpy.destroy()
         }
     }
 
-}
-
-let animationId = 0;
-// Experimental: Function to draw a curve on the canvas with animation
-function drawCurve(xs, ys, minX, maxX, minY, maxY, animation) {
-    // Parameters/Variables:
-    // xs / ys: lists of points used for drawing
-    // animationId: used to detect cancellation of animation
-    // canvas: Layer to draw the harmonograph
-    // canvasTop: The layer to draw the leading "dot", if displayed. 
-    // marginPercent: Add margins around the figure
-    
-    // Functionality
-    // The canvases size is scaled down by pixel ratio to improve picture quality
-    // xScale/yScale are used to scale the xs and ys to 0-1, so the entire figure fits / fills the view area
-    //
-    // animationInterval: Animation is triggered once per animationInterval. A higher number is faster.
-
-    const myId = animationId;
-
-    const canvas = document.getElementById("harmonographCanvas");
-    const canvasTop = document.getElementById("harmonographCanvasTop");
-
-    const ctx = canvas.getContext("2d");
-    const ctxTop = canvasTop.getContext("2d");
-    
-    const awidth = canvas.width / pixelRatio;
-    const aheight = canvas.height / pixelRatio;
-
-    const marginX = marginPercent * awidth;  // 2% of width
-    const marginY = marginPercent * aheight; // 2% of height
-
-    const xScale = (awidth - 2 * marginX) / (maxX - minX);
-    const yScale = (aheight - 2 * marginY) / (maxY - minY);
-
-    ctx.clearRect(0, 0, awidth, aheight);
-    
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.shadowBlur = 2;
-    ctx.shadowColor = ctx.strokeStyle;
-
-    let currentPoint = 0;
-    ctx.strokeStyle = document.getElementById('strokeStyle').value;
-    ctx.lineWidth = document.getElementById('lineWidth').value;
-    showDot = document.getElementById('showDots').checked;
-    animationInterval = parseFloat(document.getElementById('animationInterval').value);
-
-    console.log("Animation interval: ", animationInterval, "xScale: ", xScale, ", yScale: ", yScale);
-
-    if (animation) {
-        let continueDrawing = true;
-
-        function draw() {
-            if (!continueDrawing) return; 
-            if (animationId != myId) {
-                console.log("animationId changed, drawing cancelled");
-                ctxTop.clearRect(0, 0, awidth, aheight);
-                continueDrawing = false;
-                return;
-            }
-
-            let drawCounter = 0;
-            while (currentPoint < xs.length - 1 && drawCounter < animationInterval) {
-                ctx.beginPath();
-                ctx.moveTo(marginX + (xs[currentPoint] - minX) * xScale, marginY + (ys[currentPoint] - minY) * yScale);
-                ctx.lineTo(marginX + (xs[currentPoint + 1] - minX) * xScale, marginY + (ys[currentPoint + 1] - minY) * yScale);
-                ctx.stroke();
-
-                if (showDot) {
-                    ctxTop.clearRect(0, 0, awidth, aheight);
-                    ctxTop.fillStyle = "red";
-                    ctxTop.beginPath();
-                    dotsize = 5;
-                    ctxTop.arc(marginX + (xs[currentPoint + 1] - minX) * xScale, marginY + (ys[currentPoint + 1] - minY) * yScale, dotsize, 0, 2 * Math.PI);
-                    ctxTop.fill();
-                }
-
-                drawCounter++;
-                currentPoint++;
-            }
-
-            if (currentPoint >= xs.length - 1) {
-                continueDrawing = false;  // Stop the drawing when done
-            }
-
-            if (continueDrawing) {
-                requestAnimationFrame(draw);  // Schedule the next frame
-            }
-        }
-
-        // Start the animation
-        draw();
-    } else {
-        ctx.beginPath();
-        ctx.moveTo(marginX + (xs[0] - minX) * xScale, marginY + (ys[0] - minY) * yScale);
-    
-        for (let i = 1; i < xs.length; i++) {
-            ctx.lineTo(marginX + (xs[i] - minX) * xScale, marginY + (ys[i] - minY) * yScale);
-        }
-    
-        ctx.stroke();
-        console.log("Done in JS");
-    }
-}
-
-
-
-function drawCurveSVG(xs, ys, minX, maxX, minY, maxY) {
-    console.log("Num points = ", xs.length);
-
-    const svgElem = document.getElementById("harmonographSVG");
-    
-    const viewBoxValues = svgElem.getAttribute('viewBox').split(' ').map(parseFloat);
-    const viewBoxWidth = viewBoxValues[2];
-    const viewBoxHeight = viewBoxValues[3];
-
-    const awidth = viewBoxWidth; // parseFloat(svgElem.getAttribute('width'));
-    const aheight = viewBoxHeight; // parseFloat(svgElem.getAttribute('height'));
-    console.log("Drawing in SVG");
-
-    const marginX = 0.02 * awidth;  // 2% of width
-    const marginY = 0.02 * aheight; // 2% of height
-
-    const effectiveWidth = awidth - 2 * marginX;
-    const effectiveHeight = aheight - 2 * marginY;
-    
-    const xScale = effectiveWidth / (maxX - minX);
-    const yScale = effectiveHeight / (maxY - minY);
-    
-    const xOffset = -minX * xScale + marginX;
-    const yOffset = -minY * yScale + marginY;
-    
-    // Blur filter setup
-    const filterElem = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-    filterElem.setAttribute('id', 'slightblur');
-    const blurElem = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-    blurElem.setAttribute('in', 'SourceGraphic');
-    blurElem.setAttribute('stdDeviation', '0.5');
-    filterElem.appendChild(blurElem);
-    svgElem.appendChild(filterElem);
-
-    let pathData = `M ${(xs[0] * xScale) + xOffset} ${(ys[0] * yScale) + yOffset}`;
-    
-    for (let i = 1; i < xs.length; i++) {
-        pathData += ` L ${(xs[i] * xScale) + xOffset} ${(ys[i] * yScale) + yOffset}`;
-    }
-
-    const pathElem = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    pathElem.setAttribute('d', pathData);
-    pathElem.setAttribute('stroke', document.getElementById('strokeStyle').value);
-    pathElem.setAttribute('stroke-width', document.getElementById('lineWidth').value);
-    pathElem.setAttribute('fill', 'none');
-
-    pathElem.setAttribute('shape-rendering', 'geometricPrecision'); 
-
-
-    pathElem.setAttribute('filter', 'url(#slightblur)'); 
-    pathElem.setAttribute('filter', 'url(#betterAA)');
-    pathElem.setAttribute('filter', 'url(#softEdgeFilter)');
-
-    svgElem.appendChild(pathElem);
-    console.log("Done in SVG");
 }
 
 // Function to resize the canvas to full width and height
@@ -328,10 +158,10 @@ function resizeAndPrepareCanvas() {
     const newWidth = Math.floor(viewportWidth * 0.8);
     const newHeight = Math.floor(viewportHeight * 0.8);
 
-    const canvas = document.getElementById("harmonographCanvas");
-    const canvasTop = document.getElementById("harmonographCanvasTop");
+    const canvas = document.getElementById("canvasEl");
+    const canvasTop = document.getElementById("canvasElTop");
 
-    const svgElem = document.getElementById("harmonographSVG");
+    const svgElem = document.getElementById("svgEl");
 
     if (canvas){
 
