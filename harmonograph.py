@@ -230,4 +230,7 @@ class Harmonograph(Curve):
         harm.add_dimension("j", [FullWave.make_random("j", rnd)], extra=True)
         harm.add_dimension("k", [FullWave.make_random("k", rnd)], extra=True)
         harm.set_ramp(Ramp("r", rampstop))
+        print("Setting timespan")
+        harm.set_time_span(TimeSpan("ts", 1800, 400))
+
         return harm

@@ -86,7 +86,7 @@ def generate(style = "harmonograph", canvas_element = "harmonographCanvas", scal
         # instead of proxies... this could also be done here:
 
         # Normalize first
-        stacked_vals = np.vstack([xs, ys])
+        stacked_vals = np.vstack((xs, ys))
 
         min_val = np.min(stacked_vals)
         max_val = np.max(stacked_vals)

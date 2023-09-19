@@ -9,7 +9,7 @@ async function loadPyodideAndPackages() {
     // loadingModal: Show
     document.getElementById("loadingModal").style.display = "flex";
 
-    pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/' });
+    pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.0/full/' });
     await pyodide.loadPackage(['numpy']); //, 'matplotlib', 'Pillow']);  // Or any other required packages
 
         
